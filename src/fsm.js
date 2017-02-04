@@ -5,9 +5,9 @@ class FSM {
         }
         this.initial = config.initial;
         this.state = this.initial;
+        this.prev = null;
+        this.deletedState = null;
         this.states = config.states;
-        this.history = [];
-        this.undoHistory = [];
     }
 
     getState() {
@@ -16,15 +16,18 @@ class FSM {
 
     
     changeState(state) {
+        this.prev = this.state;
+
         if (this.states[state]){
             this.state = state;
-            this.history.push(state);
         }else {
             throw new error(); 
         }
     }
 
     trigger(event) {
+        this.prev = this.state;
+
         if(this.states[this.state].transitions[event]){
             this.changeState(this.states[this.state].transitions[event]);
         } else {
@@ -34,7 +37,9 @@ class FSM {
 
     
     reset() {
-       return this.state = this.initial;
+        this.prev = null;
+        this.state = this.initial;
+       return this.state;
 
     }
 
@@ -53,15 +58,12 @@ class FSM {
         }
     }
 
-    /**
-     * Goes back to previous state.
-     * Returns false if undo is not available.
-     * @returns {Boolean}
-     */
+    
     undo() {
-        if(this.history.length > 0){
-            // this.undoHistory.push(this.history.pop());
-            // this.state = this.history[this.history.length - 1];
+        if(this.prev){
+            this.deletedState = this.state;
+            this.state = this.prev;
+            this.prev = null;
             return true;
 
         } else {
@@ -69,15 +71,13 @@ class FSM {
         }
     }
 
-    /**
-     * Goes redo to state.
-     * Returns false if redo is not available.
-     * @returns {Boolean}
-     */
+    
     redo() {
-        if (this.undoHistory.length > 0){
-            // this.history.push(this.undoHistory.pop());
-            // this.state = this.undoHistory.length - 1;
+        if (this.deletedState){
+            this.prev = this.state;
+            this.state = this.deletedState;
+            this.deletedState = null;
+            return true;
 
         } else {
             return false;
@@ -85,10 +85,8 @@ class FSM {
     }
 
     clearHistory() {
-        this.history = [];
+        this.prev = null;
     }
 }
 
 module.exports = FSM;
-
-/** @Created by Uladzimir Halushka **/
